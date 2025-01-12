@@ -1,8 +1,12 @@
-from flask import Flask, jsonify, request, send_from_directory, render_template
+from flask import Flask, jsonify, request, send_from_directory
 import os
 import nbformat
+from flask_cors import CORS  # Importa flask-cors
 
 app = Flask(__name__, static_folder='static')
+
+# Habilitar CORS en toda la aplicación
+CORS(app)
 
 # Directorio donde están los documentos .ipynb
 DOCUMENTS_FOLDER = 'documentos'
@@ -16,10 +20,10 @@ def home():
 def obtener_documentos():
     try:
         archivos = [f for f in os.listdir(DOCUMENTS_FOLDER) if f.endswith('.ipynb')]
-        
+
         if not archivos:
             return jsonify({"mensaje": "No hay archivos .ipynb en el directorio."}), 404
-        
+
         return jsonify(archivos), 200
     except FileNotFoundError:
         return jsonify({"mensaje": "No se encontró el directorio de documentos"}), 404
@@ -28,7 +32,7 @@ def obtener_documentos():
 def ver_contenido_documento(nombre):
     try:
         notebook_path = os.path.join(DOCUMENTS_FOLDER, nombre)
-        
+
         if os.path.exists(notebook_path) and nombre.endswith('.ipynb'):
             with open(notebook_path, 'r', encoding='utf-8') as f:
                 notebook_content = nbformat.read(f, as_version=4)
@@ -67,13 +71,13 @@ def ver_contenido_documento(nombre):
                                     'contenido': output['data']['text/html']
                                 })
                     contenido.append(cell_data)
-                
+
                 elif cell.cell_type == 'markdown':
                     contenido.append({
                         'tipo': 'texto',
                         'contenido': cell.source
                     })
-            
+
             return jsonify(contenido), 200
         else:
             return jsonify({'mensaje': 'Archivo no encontrado o formato incorrecto'}), 404
@@ -83,5 +87,4 @@ def ver_contenido_documento(nombre):
 
 # Iniciar la aplicación
 if __name__ == '__main__':
-    app.run(debug=True)
-
+    app.run(debug=True, host='0.0.0.0', port=5000)  # Asegúrate de usar host='0.0.0.0' en producción
